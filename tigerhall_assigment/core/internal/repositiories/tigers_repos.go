@@ -6,4 +6,5 @@ type TigerRepo interface {
 	CreateTiger(model.Tiger, ...interface{}) (int, error)
 	CreateTigerSighting(model.TigerSightings) (int, error)
 	ListAllTigers(pagParams Pagination) (*Pagination, error)
+	TigerById(int) (model.Tiger, error)
 }

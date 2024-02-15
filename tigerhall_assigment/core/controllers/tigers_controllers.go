@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/umahmood/haversine"
 
 	"github.com/nitin/tigerhall/core/inits"
 	"github.com/nitin/tigerhall/core/internal/config"
@@ -38,12 +39,26 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 		sightings model.TigerSightings
 		err       error
 		u         *url.URL
+		tiger     model.Tiger
 	)
 	if sightings, err = fetchSightData(c); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
+	tiger, err = controller.repo.TigerById(sightings.TigerId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error()})
+		return
+	}
+
+	err = vSightingRule(sightings, tiger)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error()})
+		return
+	}
 	f, fileUpload, err := c.Request.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -54,7 +69,7 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 	log.Println(" ******* file path name becomes = *******  ", fileUpload.Filename)
 	defer f.Close()
 	u, err = inits.UploadFile(f, fileUpload)
-	//log.Printf(" here the values becomes = %s\n", c.PostForm("tiger_id"))
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
@@ -62,14 +77,18 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 		})
 		return
 	}
-
+	sightings.ImagePath = u.EscapedPath()
+	_, err = controller.repo.CreateTigerSighting(sightings)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"Error":   true,
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "file uploaded successfully",
-		"pathname": u.EscapedPath(),
+		"message": "sighting added ",
 	})
-	_ = sightings
-	// log.Printf("%+v\n", sightings)
-	// c.JSON(200, gin.H{"success": "user logged in"})
 }
 
 func (controller TigerControllers) AddTiger(c *gin.Context) {
@@ -197,4 +216,27 @@ func fetchTigerData(c *gin.Context) (model.Tiger, error) {
 	}
 
 	return tiger, err
+}
+
+func vSightingRule(curSight model.TigerSightings, tiger model.Tiger) error {
+	var err error
+	if curSight.LastSeenTimeStamp < tiger.LastSeenTimeStamp {
+		err = fmt.Errorf(" this is an older sighting")
+		return err
+	}
+	curCordinate := haversine.Coord{
+		Lat: curSight.Lat,
+		Lon: curSight.Long,
+	}
+	lastCordinate := haversine.Coord{
+		Lat: tiger.Lat,
+		Lon: tiger.Long,
+	}
+
+	_, distInKm := haversine.Distance(curCordinate, lastCordinate)
+	if distInKm < config.TigerSightDistInKm {
+		err = fmt.Errorf(" tiger is not withing %f km range", float64(5))
+	}
+	return err
+
 }

@@ -49,7 +49,6 @@ func (repo *PostgresqlRepo) Create(user model.User) (string, error) {
 	return user.Email, err
 }
 
-// UserExists : validates if user exists by email
 func (repo *PostgresqlRepo) UserExists(email string) bool {
 	var user model.User
 	repo.db.Where("email = ?", email).First(&user)
@@ -62,22 +61,6 @@ func (repo *PostgresqlRepo) User(email string) model.User {
 	return user
 
 }
-
-// func (repo *PostgresqlRepo) CreateTiger(tiger model.Tiger, txn ...interface{}) (int, error) {
-// 	//If transaction is not passed
-// 	if len(txn) != 1 {
-// 		err := repo.db.Create(&tiger).Error
-// 		return int(tiger.ID), err
-// 	}
-// 	tx, ok := txn[0].(*gorm.DB)
-// 	if !ok {
-// 		return -1, fmt.Errorf(" invalid transacrtion passed")
-// 	}
-
-// 	err := tx.Create(&tiger).Error
-// 	return int(tiger.ID), err
-// }
-
 func (repo *PostgresqlRepo) CreateTiger(tiger model.Tiger, params ...interface{}) (int, error) {
 	var (
 		err       error
@@ -109,17 +92,25 @@ func (repo *PostgresqlRepo) CreateTiger(tiger model.Tiger, params ...interface{}
 	return int(tiger.ID), err
 
 }
-func (repo *PostgresqlRepo) CreateTigerSighting(sighting model.TigerSightings) (int, error) {
 
-	err := repo.db.Create(&sighting).Error
+func (repo *PostgresqlRepo) CreateTigerSighting(sighting model.TigerSightings) (int, error) {
+	var err error
+	tx := repo.db.Begin()
+	err = tx.Debug().Create(&sighting).Error
+	if err != nil {
+		tx.Rollback()
+		return -1, err
+	}
+	result := tx.Debug().Model(&model.Tiger{}).Where(" id = ?", sighting.TigerId).
+		Updates(map[string]interface{}{"last_seen": sighting.LastSeenTimeStamp, "latititude": sighting.Lat, "longitude": sighting.Long}).
+		RowsAffected
+	if result == 0 {
+		tx.Rollback()
+		return -1, fmt.Errorf(" failed to update ")
+	}
+	tx.Commit()
 	return int(sighting.ID), err
 
-	// tx, ok := txn[0].(*gorm.DB)
-	// if !ok {
-	// 	return -1, fmt.Errorf(" invalid transacrtion passed")
-	// }
-	// err := tx.Create(&sighting).Error
-	// return int(sighting.ID), err
 }
 
 func (repo *PostgresqlRepo) ListAllTigers(pagParams repositiories.Pagination) (*repositiories.Pagination, error) {
@@ -130,6 +121,19 @@ func (repo *PostgresqlRepo) ListAllTigers(pagParams repositiories.Pagination) (*
 	err = repo.db.Debug().Scopes(Paginate(tigers, &pagParams, repo.db)).Find(&tigers).Error
 	pagParams.Rows = tigers
 	return &pagParams, err
+}
+
+func (repo *PostgresqlRepo) TigerById(tigerId int) (model.Tiger, error) {
+	var (
+		tiger model.Tiger
+		err   error
+	)
+	foundRows := repo.db.Where("id = ? ", tigerId).First(&tiger).RowsAffected
+	//TODO return relevant error types
+	if foundRows == 0 {
+		err = fmt.Errorf(" tiger = %d not found", tigerId)
+	}
+	return tiger, err
 }
 
 // UNEXPORTED METHODS
