@@ -12,4 +12,8 @@ const (
 	//Note will be stored in vault for production
 	JwtKey              = "secret_key_for_auth"
 	ExpiryTimeInMinutes = 5
+
+	//
+	DateTimeFormat = "02-01-2006 15:04:05"
+	DateFormat     = "02-01-2006"
 )

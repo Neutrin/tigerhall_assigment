@@ -122,6 +122,16 @@ func (repo *PostgresqlRepo) CreateTigerSighting(sighting model.TigerSightings) (
 	// return int(sighting.ID), err
 }
 
+func (repo *PostgresqlRepo) ListAllTigers(pagParams repositiories.Pagination) (*repositiories.Pagination, error) {
+	var (
+		tigers []*model.Tiger
+		err    error
+	)
+	err = repo.db.Debug().Scopes(Paginate(tigers, &pagParams, repo.db)).Find(&tigers).Error
+	pagParams.Rows = tigers
+	return &pagParams, err
+}
+
 // UNEXPORTED METHODS
 func intiDB() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
