@@ -20,5 +20,5 @@ const (
 	TigerSightDistInKm = float64(5)
 
 	//IMAGE PATHS
-	ImageHost = "https://storage.cloud.google.com"
+	ImageHost = "https://storage.googleapis.com"
 )

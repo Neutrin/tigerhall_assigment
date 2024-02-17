@@ -21,7 +21,7 @@ func IsAuthorized() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		//Proceed to next controller chained
+
 		c.Set("session_user", userKey)
 		c.Next()
 
