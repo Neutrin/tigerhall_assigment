@@ -7,4 +7,5 @@ type UserRepo interface {
 	Create(model.User) (string, error)
 	UserExists(email string) bool
 	User(email string) model.User
+	UserById(int) model.User
 }

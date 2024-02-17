@@ -155,8 +155,16 @@ func (repo *PostgresqlRepo) ListSightings(tigerId int, pagParams repositiories.P
 		return &pagParams, err
 	}
 	pagParams.Rows = sightings
-	log.Println(" ******** came over here in list sighting ******")
 	return &pagParams, err
+}
+
+func (repo *PostgresqlRepo) UserById(id int) model.User {
+	var user model.User
+	err := repo.db.Debug().Model(&model.User{}).Where("id = ?", id).Find(&user).Error
+	if err != nil {
+		log.Printf("%+v", err)
+	}
+	return user
 }
 
 func userSightings(tigerId int, db *gorm.DB) ([]uint, error) {

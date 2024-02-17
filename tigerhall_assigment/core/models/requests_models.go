@@ -8,7 +8,7 @@ type TigerSightingReq struct {
 }
 
 type CreateTigerReq struct {
-	Name              string `json:"name" validate:"alphanum"`
+	Name              string `json:"name" validate:"alphanumunicode"`
 	LastSeenTimeStamp string `json:"last_seen" validate:"datetime=02-01-2006 15:04:05"`
 	Lat               string `json:"latitude" validate:"latitude"`
 	Long              string `json:"longitude" validate:"longitude"`

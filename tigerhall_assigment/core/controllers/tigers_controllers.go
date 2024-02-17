@@ -17,6 +17,7 @@ import (
 	"github.com/nitin/tigerhall/core/internal/model"
 	repositiories "github.com/nitin/tigerhall/core/internal/repositiories"
 	"github.com/nitin/tigerhall/core/models"
+	"github.com/nitin/tigerhall/core/services"
 	"github.com/nitin/tigerhall/core/utils"
 )
 
@@ -30,10 +31,12 @@ func init() {
 type TigerControllers struct {
 	repo               repositiories.TigerRepo
 	userRepo           repositiories.UserRepo
+	notifyUserService  *services.SightingNotification
 	tigerCreatedByUser map[int]map[int]struct{}
 }
 
-func NewTigerController(repo repositiories.TigerRepo, userRepo repositiories.UserRepo) TigerControllers {
+func NewTigerController(repo repositiories.TigerRepo, userRepo repositiories.UserRepo,
+	notifyService *services.SightingNotification) TigerControllers {
 	tigerMap := repo.InitTigerCreateMap()
 	for key, value := range tigerMap {
 		log.Println("key =", key, " value = ", value)
@@ -42,6 +45,7 @@ func NewTigerController(repo repositiories.TigerRepo, userRepo repositiories.Use
 		repo:               repo,
 		userRepo:           userRepo,
 		tigerCreatedByUser: tigerMap,
+		notifyUserService:  notifyService,
 	}
 }
 
@@ -76,8 +80,6 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 			"message": err.Error()})
 		return
 	}
-
-	log.Println(" ******* file path name becomes = *******  ", fileUpload.Filename)
 	defer f.Close()
 	u, err = inits.UploadFile(f, fileUpload)
 
@@ -99,6 +101,8 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 		return
 	}
 	controller.tigerCreatedByUser[sightings.TigerId][int(sightings.CreatedBy)] = struct{}{}
+	//This will notify all the users about the service
+	go controller.notifyUser(int(tiger.ID))
 	c.JSON(http.StatusOK, gin.H{
 		"message": "sighting added ",
 	})
@@ -139,16 +143,20 @@ func (controller TigerControllers) AddTiger(c *gin.Context) {
 		return
 	}
 	controller.tigerCreatedByUser[int(tiger.ID)] = make(map[int]struct{})
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("tiger = %s added ", tiger.Name),
 	})
 
 }
 
-func (controller TigerControllers) getSessionUserId(c *gin.Context) uint {
-	userEmail, _ := c.Get("session_user")
-	return controller.userRepo.User(userEmail.(string)).ID
+func (controller TigerControllers) notifyUser(tigerId int) {
+	for userId := range controller.tigerCreatedByUser[tigerId] {
+		controller.notifyUserService.NotifyUser(userId)
+	}
+
 }
+
 func (controller TigerControllers) ListAllTigers(c *gin.Context) {
 	var (
 		pageNo, _ = strconv.Atoi(c.Query("page_no"))
@@ -283,9 +291,15 @@ func vSightingRule(curSight model.TigerSightings, tiger model.Tiger) error {
 	}
 
 	_, distInKm := haversine.Distance(curCordinate, lastCordinate)
+
 	if distInKm < config.TigerSightDistInKm {
 		err = fmt.Errorf(" tiger is not withing %f km range", float64(5))
 	}
 	return err
 
+}
+
+func (controller TigerControllers) getSessionUserId(c *gin.Context) uint {
+	userEmail, _ := c.Get("session_user")
+	return controller.userRepo.User(userEmail.(string)).ID
 }

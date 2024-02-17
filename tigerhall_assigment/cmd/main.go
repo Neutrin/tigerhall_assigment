@@ -8,18 +8,23 @@ import (
 	"github.com/nitin/tigerhall/core/inits"
 	"github.com/nitin/tigerhall/core/repositiories"
 	"github.com/nitin/tigerhall/core/routes"
+	"github.com/nitin/tigerhall/core/services"
 )
 
 func main() {
 	userRepo, err := repositiories.NewPostgresqlUserRepo()
+	if err != nil {
+		panic(err)
+	}
 	tigerRepo, err := repositiories.NewPostgresqlTigerRepo()
 	if err != nil {
 		panic(err)
 	}
 	inits.InitStorageClient()
 	log.Println(" intilaisation succesfull")
+	userNotifyService := services.NewSightingNotification(2, userRepo, services.NewMailNotification())
 	InitRoutes(controllers.NewAuthController(userRepo),
-		controllers.NewTigerController(tigerRepo, userRepo))
+		controllers.NewTigerController(tigerRepo, userRepo, userNotifyService))
 
 }
 

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -10,6 +11,9 @@ import (
 
 func GenerateSignedTokens(uniqueKey string, expireTimeMin int) (string, error) {
 	//expiry time of token
+	if expireTimeMin <= 0 {
+		return "", fmt.Errorf(" invalid expire time")
+	}
 	expirationTime := time.Now().Add(time.Duration(expireTimeMin) * time.Minute)
 
 	claims := &model.Claim{
