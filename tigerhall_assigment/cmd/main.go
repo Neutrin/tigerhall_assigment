@@ -18,7 +18,8 @@ func main() {
 	}
 	inits.InitStorageClient()
 	log.Println(" intilaisation succesfull")
-	InitRoutes(controllers.NewAuthController(userRepo), controllers.NewTigerController(tigerRepo))
+	InitRoutes(controllers.NewAuthController(userRepo),
+		controllers.NewTigerController(tigerRepo, userRepo))
 
 }
 

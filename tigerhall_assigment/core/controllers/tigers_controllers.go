@@ -17,6 +17,7 @@ import (
 	"github.com/nitin/tigerhall/core/internal/model"
 	repositiories "github.com/nitin/tigerhall/core/internal/repositiories"
 	"github.com/nitin/tigerhall/core/models"
+	"github.com/nitin/tigerhall/core/utils"
 )
 
 // TODO : make valid request messages
@@ -27,11 +28,21 @@ func init() {
 }
 
 type TigerControllers struct {
-	repo repositiories.TigerRepo
+	repo               repositiories.TigerRepo
+	userRepo           repositiories.UserRepo
+	tigerCreatedByUser map[int]map[int]struct{}
 }
 
-func NewTigerController(repo repositiories.TigerRepo) TigerControllers {
-	return TigerControllers{repo: repo}
+func NewTigerController(repo repositiories.TigerRepo, userRepo repositiories.UserRepo) TigerControllers {
+	tigerMap := repo.InitTigerCreateMap()
+	for key, value := range tigerMap {
+		log.Println("key =", key, " value = ", value)
+	}
+	return TigerControllers{
+		repo:               repo,
+		userRepo:           userRepo,
+		tigerCreatedByUser: tigerMap,
+	}
 }
 
 func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
@@ -78,6 +89,7 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 		return
 	}
 	sightings.ImagePath = u.EscapedPath()
+	sightings.CreatedBy = controller.getSessionUserId(c)
 	_, err = controller.repo.CreateTigerSighting(sightings)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -86,6 +98,7 @@ func (controller TigerControllers) AddTigerSighting(c *gin.Context) {
 		})
 		return
 	}
+	controller.tigerCreatedByUser[sightings.TigerId][int(sightings.CreatedBy)] = struct{}{}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "sighting added ",
 	})
@@ -101,7 +114,6 @@ func (controller TigerControllers) AddTiger(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-
 	f, fileUpload, err := c.Request.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -117,7 +129,7 @@ func (controller TigerControllers) AddTiger(c *gin.Context) {
 		})
 		return
 	}
-
+	tiger.CreatedBy = controller.getSessionUserId(c)
 	_, err = controller.repo.CreateTiger(tiger, u.EscapedPath())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -126,13 +138,17 @@ func (controller TigerControllers) AddTiger(c *gin.Context) {
 		})
 		return
 	}
-
+	controller.tigerCreatedByUser[int(tiger.ID)] = make(map[int]struct{})
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("tiger = %s added ", tiger.Name),
 	})
 
 }
 
+func (controller TigerControllers) getSessionUserId(c *gin.Context) uint {
+	userEmail, _ := c.Get("session_user")
+	return controller.userRepo.User(userEmail.(string)).ID
+}
 func (controller TigerControllers) ListAllTigers(c *gin.Context) {
 	var (
 		pageNo, _ = strconv.Atoi(c.Query("page_no"))
@@ -162,6 +178,39 @@ func (controller TigerControllers) ListAllTigers(c *gin.Context) {
 	result.Rows = responses
 	c.JSON(http.StatusOK, result)
 
+}
+
+func (controller TigerControllers) ListAllSightings(c *gin.Context) {
+	var (
+		pageNo, _  = strconv.Atoi(c.Query("page_no"))
+		limit, _   = strconv.Atoi(c.Query("limit"))
+		tigerId, _ = strconv.Atoi(c.Param("tiger_id"))
+		sortParam  = "last_seen"
+		response   = models.TigerSightingResp{}
+	)
+	pageParam := repositiories.NewPagination(limit, pageNo, sortParam)
+	result, err := controller.repo.ListSightings(tigerId, pageParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"Error":   true,
+		})
+		return
+	}
+	for _, curSighting := range result.Rows.([]*model.TigerSightings) {
+		response.Sightings = append(response.Sightings, models.Sighting{
+			Lat:      fmt.Sprintf("%f", curSighting.Lat),
+			Long:     fmt.Sprintf("%f", curSighting.Long),
+			LastSeen: time.UnixMilli(curSighting.LastSeenTimeStamp).UTC().Format(config.DateTimeFormat),
+			Image:    utils.GenImgURL(curSighting.ImagePath),
+		})
+	}
+	if len(result.Rows.([]*model.TigerSightings)) > 0 {
+		response.Name = result.Rows.([]*model.TigerSightings)[0].Tiger.Name
+		response.TigerId = result.Rows.([]*model.TigerSightings)[0].TigerId
+	}
+	result.Rows = response
+	c.JSON(http.StatusOK, result)
 }
 
 func fetchSightData(c *gin.Context) (model.TigerSightings, error) {

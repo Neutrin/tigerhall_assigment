@@ -18,4 +18,7 @@ const (
 	DateFormat     = "02-01-2006"
 
 	TigerSightDistInKm = float64(5)
+
+	//IMAGE PATHS
+	ImageHost = "https://storage.cloud.google.com"
 )

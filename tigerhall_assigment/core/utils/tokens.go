@@ -24,20 +24,20 @@ func GenerateSignedTokens(uniqueKey string, expireTimeMin int) (string, error) {
 	return token.SignedString([]byte(config.JwtKey))
 }
 
-func ParseToken(tokenString string) (err error) {
+func ParseToken(tokenString string) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &model.Claim{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.JwtKey), nil
 	})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	_, ok := token.Claims.(*model.Claim)
+	claim, ok := token.Claims.(*model.Claim)
 
 	if !ok {
-		return err
+		return "", err
 	}
 
-	return nil
+	return claim.StandardClaims.Subject, nil
 }

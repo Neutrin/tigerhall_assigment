@@ -15,13 +15,15 @@ func IsAuthorized() gin.HandlerFunc {
 			return
 		}
 
-		err = utils.ParseToken(cookie)
+		userKey, err := utils.ParseToken(cookie)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "unauthorized"})
 			c.Abort()
 			return
 		}
 		//Proceed to next controller chained
+		c.Set("session_user", userKey)
 		c.Next()
+
 	}
 }

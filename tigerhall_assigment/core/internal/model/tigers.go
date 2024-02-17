@@ -13,6 +13,8 @@ type Tiger struct {
 	LastSeenTimeStamp int64     `gorm:"column:last_seen;type:BIGINT"`
 	Lat               float64   `gorm:"column:latititude;type:Decimal(8,6)"`
 	Long              float64   `gorm:"column:longitude;type:Decimal(9,6)"`
+	CreatedBy         uint      `gorm:"column:created_by;type:varchar(100)"`
+	User              User      `gorm:"foreignKey:CreatedBy"`
 }
 
 type TigerSightings struct {
@@ -23,4 +25,6 @@ type TigerSightings struct {
 	Lat               float64 `gorm:"column:latititude;type:Decimal(8,6)"`
 	Long              float64 `gorm:"column:longitude;type:Decimal(9,6)"`
 	ImagePath         string  `gorm:"column:image_path;type:varchar(200)"`
+	CreatedBy         uint    `gorm:"column:created_by;type:varchar(100)"`
+	User              User    `gorm:"foreignKey:CreatedBy"`
 }

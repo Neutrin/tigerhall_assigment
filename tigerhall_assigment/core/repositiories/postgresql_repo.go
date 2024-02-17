@@ -1,6 +1,7 @@
 package repositiories
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -81,6 +82,7 @@ func (repo *PostgresqlRepo) CreateTiger(tiger model.Tiger, params ...interface{}
 		Lat:               tiger.Lat,
 		Long:              tiger.Long,
 		ImagePath:         imagePath,
+		CreatedBy:         tiger.CreatedBy,
 	}
 
 	err = tx.Create(&sightings).Error
@@ -102,7 +104,8 @@ func (repo *PostgresqlRepo) CreateTigerSighting(sighting model.TigerSightings) (
 		return -1, err
 	}
 	result := tx.Debug().Model(&model.Tiger{}).Where(" id = ?", sighting.TigerId).
-		Updates(map[string]interface{}{"last_seen": sighting.LastSeenTimeStamp, "latititude": sighting.Lat, "longitude": sighting.Long}).
+		Updates(map[string]interface{}{"last_seen": sighting.LastSeenTimeStamp,
+			"latititude": sighting.Lat, "longitude": sighting.Long, "created_by": sighting.CreatedBy}).
 		RowsAffected
 	if result == 0 {
 		tx.Rollback()
@@ -118,7 +121,7 @@ func (repo *PostgresqlRepo) ListAllTigers(pagParams repositiories.Pagination) (*
 		tigers []*model.Tiger
 		err    error
 	)
-	err = repo.db.Debug().Scopes(Paginate(tigers, &pagParams, repo.db)).Find(&tigers).Error
+	err = repo.db.Debug().Scopes(Paginate(tigers, &pagParams, repo.db, map[string]interface{}{})).Find(&tigers).Error
 	pagParams.Rows = tigers
 	return &pagParams, err
 }
@@ -134,6 +137,52 @@ func (repo *PostgresqlRepo) TigerById(tigerId int) (model.Tiger, error) {
 		err = fmt.Errorf(" tiger = %d not found", tigerId)
 	}
 	return tiger, err
+}
+
+/*
+ListSightings : Fetches all sightings of tiger from database
+@Error ignored record not found
+*/
+func (repo *PostgresqlRepo) ListSightings(tigerId int, pagParams repositiories.Pagination) (
+	*repositiories.Pagination, error) {
+	var (
+		sightings = make([]*model.TigerSightings, 0)
+		err       error
+	)
+	err = repo.db.Debug().Scopes(Paginate(sightings, &pagParams, repo.db, map[string]interface{}{"tiger_id": tigerId})).
+		Model(&model.TigerSightings{}).Preload("Tiger").Where("tiger_id = ?", tigerId).Find(&sightings).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return &pagParams, err
+	}
+	pagParams.Rows = sightings
+	log.Println(" ******** came over here in list sighting ******")
+	return &pagParams, err
+}
+
+func userSightings(tigerId int, db *gorm.DB) ([]uint, error) {
+	var (
+		userId    = make([]uint, 0)
+		err       error
+		sightings = make([]*model.TigerSightings, 0)
+	)
+	err = db.Debug().Model(&model.TigerSightings{}).Where("tiger_id = ?", tigerId).Find(&sightings).Error
+	for _, curSighting := range sightings {
+		userId = append(userId, curSighting.CreatedBy)
+	}
+	return userId, err
+}
+
+func tigersAll(db *gorm.DB) ([]int, error) {
+	var (
+		tigers   []*model.Tiger
+		tigerIds []int
+		err      error
+	)
+	err = db.Debug().Model(&model.Tiger{}).Select("id").Find(&tigers).Error
+	for _, curTiger := range tigers {
+		tigerIds = append(tigerIds, int(curTiger.ID))
+	}
+	return tigerIds, err
 }
 
 // UNEXPORTED METHODS
@@ -152,4 +201,28 @@ func intiDB() (*gorm.DB, error) {
 
 	log.Println("************Migrated database****************")
 	return db, nil
+}
+
+func (repo *PostgresqlRepo) InitTigerCreateMap() map[int]map[int]struct{} {
+	var (
+		tigerCreatedByMap = make(map[int]map[int]struct{})
+		err               error
+	)
+	if tigers, err := tigersAll(repo.db); err == nil {
+		for _, curTiger := range tigers {
+			if _, exists := tigerCreatedByMap[curTiger]; !exists {
+				tigerCreatedByMap[curTiger] = make(map[int]struct{})
+			}
+			if users, err := userSightings(curTiger, repo.db); err == nil {
+				for _, curUser := range users {
+					tigerCreatedByMap[curTiger][int(curUser)] = struct{}{}
+				}
+
+			}
+		}
+	}
+	if err != nil {
+		log.Printf(" failed = %+v\n", err)
+	}
+	return tigerCreatedByMap
 }
