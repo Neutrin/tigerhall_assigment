@@ -1,13 +1,3 @@
 {
-  "type": "service_account",
-  "project_id": "celtic-ego-414312",
-  "private_key_id": "f0cee52797a5ef95002f9b10b752197853d6a7be",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDLodiG1VXXUA+G\nZ/nG4/sIIein5KPC1FJrCcSlGVb8SDV2biknyOrZHUcaWvkG6uv6yH7/aIYfFqTs\njNl3iG/FiU6wQCsNrlpNsrENJBbRUSlUeJ7P2RIPRdB963oQcB+C2z6wMYKp/9yJ\n5zIJjgtqaf4nu44RKzZvsmRMTP8O0hGRm+kiPJwYkgcYrEooeNFPf5RHKvLYauaS\nywoV+jH8GgzcQ9eg7DEBwMWxPol21QIdAUoT6rnWW7bFiE0kR2Uxx0S43NJimCih\nj54zffHTTDqC+Q/yXf/wEgLPqDCBBVtkIzioyLPq+6irMi8Kka48f0woebf6qmOg\ngN1CLwqZAgMBAAECggEAG5woNa/7YaRTVpAGh/cldGbUmt8fbS1It4atiQ00hCRu\nS06IegJ+BU4489Pd7BgyQuCoh4zukoyJdCFs4w42yXvilXc93y8Cw4I1C2kXRu5Q\nQknQjrIKBtQafthMxqnNO/rqNw2ff9lXV8NnP3BpD9arRUvi6WUIjoCLpOTTuHh5\nR/uENzipTOw0d2otZesrkvbnlJ99YhbMRAAcOlomcGD22kAXtHYQIE4gnh1Pcuab\nZVcmM+kQcWhI6YPUHju8BLrELnETakUroi2KD5oYr81OpAGJUSJf2aTLG3PyWzC1\nfKtmoSu/zkwtlZcjvmTtJUHtr74AUMwhnjeRn6fl+QKBgQDozZXWzG594UkDqabR\n7zDqL8aVNdZiaD587DRvFcZdpMpHV3Qmc5MCOSsYGlJJ1mutpJAjT6A1AnUj0oTN\nqvy3k3SakJP9Wtx8T+O7VasEVfoQTZ/+yLXlTMwWhXXjwe/u8w1R8WtBxX1p+Xbj\nH2bCVZG+vJo1SZWIIpENTfqPTwKBgQDf7Ck2nRyjJ4MNleU8wiqlqkgpxtspUBMb\nnKrD9FJ1t0OUGsP/LUwk3M0yKcuIn5ppnjljwSSnNmhhOuaGu2J3rIg5ThqRhRg2\nKWt2KioJ9MPGuHuoZH6IV+OpVGwYzJfpFsV8Veu8amfVqXimn7m2xbVnk0sVQDGK\nH8+qaKqNlwKBgQDe3hGYNNWCRO41R3Cgga/+QgaGSagXRVytEyOPRPVGKMBNU/ep\n5/LQqhILXQdyEIe9EFG8vDnPBa9Gv/7LNeoBhHSYk9hZL2bsyz5k1TqHSBfBC88j\nhto7zi2DUfjuNXeQ9bXGwKvBp2LM1TlvbVxeprSEOOIYKX2xegYLCp/YGQKBgQDA\nJnmfQecHIqrVB6H1J3FNQ/g00U3T/8DF2wS2rnvsQ90bxHQYDxjeMRNsTm03yi3J\nIFuC/ISlcIzVkqOrTjVLGKS0+A7YfOuv3o82kSwN6xns9vY2JDZobXMRJT61cSuS\ne1XwQhLOVkjQEmNUKJBHBRWL0duGWtWn/3BGfRaN9QKBgQCb4wb+wxbJewGeNDh4\nHl1BAUqeW/JXNBx0Dy/7mMjc2W1LcOK/PEvTVsCqqBhEwyZ3E2oouZicPHKInNT0\nmwOeEXD22PxJlY4twnbfIXeVwbmTR3fj8Q+GFUFvmrqXN5lATuL5/kQV4BN8RqXT\nchD2saA8Z3z9t7ZeQCVogIfO6A==\n-----END PRIVATE KEY-----\n",
-  "client_email": "tiger-bucket-service-account@celtic-ego-414312.iam.gserviceaccount.com",
-  "client_id": "115953566864007880062",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/tiger-bucket-service-account%40celtic-ego-414312.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
+  
 }
